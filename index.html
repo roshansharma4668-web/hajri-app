@@ -201,12 +201,18 @@
     }
 
     /* Staff Details Ledger Screen */
+<<<<<<< HEAD
     #screenStaffDetail { display: none; flex-direction: column; overflow: hidden; }
     #screenStaffDetail.open { display: flex; }
     .staff-detail-scrollable { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
     .summary-strip {
       display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 12px 14px;
       background: #f8fafc; border-bottom: 1px solid var(--border); text-align: center; flex-shrink: 0;
+=======
+    .summary-strip {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 12px 14px;
+      background: #f8fafc; border-bottom: 1px solid var(--border); text-align: center;
+>>>>>>> c2fc063c994a7de2acb54cc8b99c367174089a49
     }
     .sum-box { padding: 6px 4px; border-radius: 8px; background: #fff; border: 1px solid var(--border); }
     .sum-box .val { font-size: 0.95rem; font-weight: 800; }
@@ -457,7 +463,11 @@
     <!-- SUB-SCREEN 2: STAFF MONTHLY ATTENDANCE LEDGER (0:35 - 1:28)       -->
     <!-- ================================================================= -->
     <div id="screenStaffDetail" class="sub-screen">
+<<<<<<< HEAD
       <div class="sub-header" style="flex-shrink:0;">
+=======
+      <div class="sub-header">
+>>>>>>> c2fc063c994a7de2acb54cc8b99c367174089a49
         <div class="sub-header-left">
           <button class="icon-btn" onclick="closeStaffDetailScreen()">←</button>
           <span id="detailStaffName">Staff Name</span>
@@ -473,6 +483,7 @@
         <button class="dropdown-item danger" onclick="deleteCurrentStaff()">🗑️ Delete</button>
       </div>
 
+<<<<<<< HEAD
       <div class="staff-detail-scrollable">
         <!-- 5 Metric Summary Strip -->
         <div class="summary-strip">
@@ -523,6 +534,56 @@
 
         <div id="dayLedgerContainer" class="day-ledger-list"></div>
       </div>
+=======
+      <!-- 5 Metric Summary Strip -->
+      <div class="summary-strip">
+        <div class="sum-box">
+          <div class="val" style="color:var(--green);" id="detSumP">0</div>
+          <div class="lbl">P</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--red);" id="detSumA">0</div>
+          <div class="lbl">A</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--amber);" id="detSumPL">0</div>
+          <div class="lbl">PL</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--green);" id="detSumOT">0h 0m</div>
+          <div class="lbl">OT + H</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--green-dark);" id="detSumPay">₹0</div>
+          <div class="lbl">Payment</div>
+        </div>
+      </div>
+
+      <div class="carry-row">
+        <span>↺ Carry forward (prior months)</span>
+        <strong style="color:var(--text);">₹0 ›</strong>
+      </div>
+
+      <div class="action-pills">
+        <button class="pill-action primary" onclick="openStaffReportScreen()">📄 View Report</button>
+        <button class="pill-action" onclick="openPaySalarySheet()">💵 Pay salary</button>
+        <button class="pill-action" onclick="openTransactionsScreen()">⇄ Transactions</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border);">
+        <button class="icon-btn" onclick="shiftMonth(-1)">‹</button>
+        <strong id="detMonthTitle" style="font-size:0.92rem;">October 2026</strong>
+        <button class="icon-btn" onclick="shiftMonth(1)">›</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:8px 16px; font-size:0.75rem; font-weight:700; color:var(--muted);">
+        <span>Date</span>
+        <span>Attendance</span>
+        <span>Payment</span>
+      </div>
+
+      <div id="dayLedgerContainer" class="day-ledger-list"></div>
+>>>>>>> c2fc063c994a7de2acb54cc8b99c367174089a49
     </div>
 
     <!-- ================================================================= -->
@@ -586,8 +647,13 @@
         <div id="repDailyList" style="display:flex; flex-direction:column; gap:6px;"></div>
       </div>
 
+<<<<<<< HEAD
       <div class="bottom-cta-bar no-print" style="display:flex; gap:10px; position:fixed; bottom:0; width:100%; max-width:440px; background:#fff;">
         <button class="full-green-btn" style="flex:1;" onclick="exportStaffPDF()">📄 PDF / Print</button>
+=======
+      <div class="bottom-cta-bar no-print" style="display:flex; gap:10px; position:fixed; bottom:0; width:100%; max-width:440px;">
+        <button class="full-green-btn" style="flex:1;" onclick="window.print()">📄 PDF</button>
+>>>>>>> c2fc063c994a7de2acb54cc8b99c367174089a49
         <button class="outline-pill-btn" style="flex:1; font-size:0.95rem;" onclick="downloadStaffCSV()">📊 CSV</button>
       </div>
     </div>
@@ -1467,11 +1533,14 @@
       document.getElementById('screenStaffReport').classList.add('open');
     }
 
+<<<<<<< HEAD
     
     function exportStaffPDF() {
       window.print();
     }
 
+=======
+>>>>>>> c2fc063c994a7de2acb54cc8b99c367174089a49
     function closeStaffReportScreen() {
       document.getElementById('screenStaffReport').classList.remove('open');
     }
