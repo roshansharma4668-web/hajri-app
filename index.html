@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Hajri Register — Mobile Attendance & Payroll</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#15803d" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root {
+      --green-dark: #146c32;
+      --green: #16803c;
+      --green-light: #e8f5ee;
+      --green-pill: #dff2e7;
+      --amber: #d97706;
+      --amber-light: #fef3c7;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --bg: #ffffff;
+      --surface: #f4f5f6;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #e5e7eb; color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
+    .mobile-shell {
+      width: 100%; max-width: 440px; background: var(--bg); min-height: 100vh;
+      display: flex; flex-direction: column; position: relative; overflow-x: hidden;
+      box-shadow: 0 0 24px rgba(0,0,0,0.1);
+    }
+
+    /* Top Bar */
+    .top-bar {
+      padding: 14px 16px 10px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border); background: #fff; position: sticky; top: 0; z-index: 20;
+    }
+    .site-selector-label { font-size: 0.72rem; color: var(--muted); }
+    .site-selector {
+      font-size: 1.05rem; font-weight: 700; border: none; background: transparent; color: var(--text);
+      cursor: pointer; padding-right: 4px; outline: none;
+    }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .month-chip {
+      background: var(--green-light); color: var(--green-dark); padding: 5px 10px; border-radius: 8px;
+      font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 5px; border: none; cursor: pointer;
+    }
+    .icon-btn { background: none; border: none; font-size: 1.15rem; cursor: pointer; color: var(--text); padding: 4px; }
+
+    /* Horizontal Week Strip */
+    .week-strip {
+      display: flex; align-items: center; justify-content: space-between; padding: 10px 8px;
+      border-bottom: 1px solid var(--border); background: #fff;
+    }
+    .week-days { display: flex; flex: 1; justify-content: space-around; }
+    .day-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;
+      padding: 4px 6px; border-radius: 10px; min-width: 38px;
+    }
+    .day-item .dow { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+    .day-item .dom {
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; font-size: 0.88rem; font-weight: 700; color: var(--text);
+    }
+    .day-item.active .dow { color: var(--green); }
+    .day-item.active .dom { background: var(--green); color: #fff; }
+
+    /* Filter Chips Row */
+    .filter-chips {
+      display: flex; gap: 8px; padding: 12px 14px; overflow-x: auto; align-items: center;
+      scrollbar-width: none;
+    }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .chip {
+      padding: 6px 14px; border-radius: 99px; font-size: 0.8rem; font-weight: 600;
+      border: 1px solid var(--border); background: #fff; color: var(--text); white-space: nowrap; cursor: pointer;
+    }
+    .chip.active-all { border-color: var(--green); color: var(--green); background: var(--green-light); }
+    .chip.pending { background: var(--amber-light); color: #92400e; border-color: transparent; }
+    .chip.present { background: var(--green-pill); color: var(--green-dark); border-color: transparent; }
+    .chip.absent { background: var(--red-light); color: var(--red); border-color: transparent; }
+
+    /* Empty State */
+    .empty-state {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 24px; text-align: center;
+    }
+    .empty-icon { font-size: 3.2rem; color: var(--muted); margin-bottom: 12px; opacity: 0.65; }
+    .empty-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+    .empty-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 22px; max-width: 240px; line-height: 1.4; }
+    .btn-green-pill {
+      background: var(--green); color: #fff; border: none; padding: 13px 26px; border-radius: 99px;
+      font-weight: 700; font-size: 0.92rem; cursor: pointer; box-shadow: 0 2px 6px rgba(22,128,60,0.25);
+    }
+
+    /* Staff Card in Overview */
+    .staff-list { padding: 4px 14px 90px; display: flex; flex-direction: column; gap: 10px; }
+    .staff-card {
+      background: var(--surface); border-radius: 14px; padding: 12px 14px;
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    }
+    .staff-card-left { display: flex; align-items: center; gap: 12px; }
+    .serial-badge {
+      width: 28px; height: 28px; border-radius: 50%; background: #fff; color: var(--muted);
+      display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700;
+    }
+    .staff-name { font-size: 0.96rem; font-weight: 700; color: var(--text); }
+    .staff-role { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .staff-card-right { display: flex; align-items: center; gap: 6px; }
+    .circle-btn {
+      min-width: 34px; height: 34px; padding: 0 8px; border-radius: 99px; border: 1px solid var(--border);
+      background: #fff; color: var(--text); font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .circle-btn.active-P { background: var(--green); color: #fff; border-color: var(--green); }
+    .circle-btn.active-A { background: var(--red); color: #fff; border-color: var(--red); }
+
+    .security-banner {
+      margin: 10px auto; padding: 8px 18px; border-radius: 99px; background: #f8fafc;
+      border: 1px solid var(--border); font-size: 0.78rem; color: var(--muted);
+      display: flex; align-items: center; gap: 6px; width: fit-content;
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: fixed; bottom: 76px; right: calc(50% - 196px); width: 54px; height: 54px;
+      border-radius: 50%; background: var(--green); color: #fff; border: none;
+      font-size: 1.7rem; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(22,128,60,0.4); cursor: pointer; z-index: 25;
+    }
+    @media (max-width: 440px) { .fab { right: 20px; } }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed; bottom: 0; width: 100%; max-width: 440px; background: #fff;
+      border-top: 1px solid var(--border); display: flex; justify-content: space-around;
+      padding: 8px 0 10px; z-index: 30;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      background: none; border: none; color: var(--muted); font-size: 0.72rem; font-weight: 600; cursor: pointer;
+    }
+    .nav-item .nav-icon {
+      padding: 3px 14px; border-radius: 99px; font-size: 1.1rem;
+    }
+    .nav-item.active { color: var(--green-dark); }
+    .nav-item.active .nav-icon { background: var(--green-pill); }
+
+    /* Fullscreen Sub-Screens (Add Staff, Staff Detail, Staff Report, Transactions) */
+    .sub-screen {
+      position: fixed; top: 0; width: 100%; max-width: 440px; height: 100vh;
+      background: #fff; z-index: 40; display: none; flex-direction: column; overflow-y: auto;
+    }
+    .sub-screen.open { display: flex; }
+    .sub-header {
+      padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: #fff; position: sticky; top: 0; z-index: 10;
+    }
+    .sub-header-left { display: flex; align-items: center; gap: 12px; font-size: 1.05rem; font-weight: 700; }
+    .outline-pill-btn {
+      border: 1px solid var(--green); color: var(--green); background: #fff;
+      padding: 6px 12px; border-radius: 99px; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    }
+
+    /* Form Controls */
+    .section-label {
+      font-size: 0.72rem; font-weight: 700; color: var(--green-dark); letter-spacing: 0.05em;
+      margin: 18px 16px 10px; text-transform: uppercase;
+    }
+    .field-box { margin: 0 16px 14px; }
+    .field-box label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+    .grey-input {
+      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid transparent;
+      background: var(--surface); font-size: 0.95rem; color: var(--text); outline: none;
+    }
+    .grey-input:focus { border-color: var(--green); background: #fff; }
+    .phone-row { display: flex; gap: 8px; }
+    .country-box {
+      padding: 14px 12px; border-radius: 12px; background: var(--surface);
+      font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;
+    }
+    .additional-row {
+      margin: 4px 16px 14px; padding: 14px; border-radius: 12px; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    }
+    .seg-group { display: flex; gap: 8px; margin: 6px 16px 14px; }
+    .seg-btn {
+      flex: 1; padding: 11px; border-radius: 99px; border: 1px solid var(--border);
+      background: #fff; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-align: center;
+    }
+    .seg-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+    .bottom-cta-bar {
+      margin-top: auto; padding: 14px 16px; border-top: 1px solid var(--border); background: #fff;
+    }
+    .full-green-btn {
+      width: 100%; padding: 14px; border-radius: 99px; background: var(--green);
+      color: #fff; font-size: 0.98rem; font-weight: 700; border: none; cursor: pointer;
+    }
+
+    /* Staff Details Ledger Screen */
+    .summary-strip {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 12px 14px;
+      background: #f8fafc; border-bottom: 1px solid var(--border); text-align: center;
+    }
+    .sum-box { padding: 6px 4px; border-radius: 8px; background: #fff; border: 1px solid var(--border); }
+    .sum-box .val { font-size: 0.95rem; font-weight: 800; }
+    .sum-box .lbl { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+    .carry-row {
+      padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.82rem; color: var(--muted); border-bottom: 1px solid var(--border);
+    }
+    .action-pills {
+      display: flex; gap: 8px; padding: 12px 14px; overflow-x: auto; border-bottom: 1px solid var(--border);
+    }
+    .pill-action {
+      padding: 8px 14px; border-radius: 99px; font-size: 0.8rem; font-weight: 700;
+      border: 1px solid var(--border); background: #fff; cursor: pointer; white-space: nowrap;
+    }
+    .pill-action.primary { background: var(--green); color: #fff; border-color: var(--green); }
+
+    .day-ledger-list { padding: 0 14px 80px; }
+    .day-ledger-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .day-label { width: 48px; font-size: 0.82rem; font-weight: 700; }
+    .day-label .sub { font-size: 0.7rem; color: var(--muted); font-weight: 500; }
+    .day-label.sunday { color: var(--red); }
+    .day-pills { display: flex; gap: 6px; align-items: center; }
+    .mini-circle {
+      min-width: 32px; height: 32px; padding: 0 7px; border-radius: 99px; background: var(--surface);
+      border: none; font-size: 0.74rem; font-weight: 700; color: var(--text); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mini-circle.sel-P { background: var(--green); color: #fff; }
+    .mini-circle.sel-A { background: var(--red); color: #fff; }
+    .mini-circle.sel-PL { background: var(--amber); color: #fff; }
+    .pay-add-btn {
+      font-size: 0.8rem; font-weight: 600; color: var(--green-dark); background: none;
+      border: none; cursor: pointer; display: flex; align-items: center; gap: 4px;
+    }
+
+    /* Bottom Sheet Modal */
+    .sheet-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 60;
+      display: none; justify-content: center; align-items: flex-end;
+    }
+    .sheet-backdrop.open { display: flex; }
+    .bottom-sheet {
+      width: 100%; max-width: 440px; background: #fff; border-radius: 20px 20px 0 0;
+      padding: 18px 16px 24px; max-height: 90vh; overflow-y: auto;
+    }
+    .sheet-handle { width: 38px; height: 4px; background: #d1d5db; border-radius: 99px; margin: 0 auto 14px; }
+    .sheet-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .sheet-title { font-size: 1.05rem; font-weight: 700; }
+    .type-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; }
+    .type-chip {
+      padding: 8px 14px; border-radius: 99px; background: var(--surface); border: 1px solid transparent;
+      font-size: 0.84rem; font-weight: 700; cursor: pointer; color: var(--green-dark);
+    }
+    .type-chip.active { background: var(--green); color: #fff; }
+    .type-chip.absent-chip { color: var(--red); }
+    .type-chip.absent-chip.active { background: var(--red); color: #fff; }
+
+    /* Context Menu Dropdown */
+    .dropdown-menu {
+      position: absolute; top: 50px; right: 16px; background: #fff; border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border);
+      z-index: 55; display: none; flex-direction: column; min-width: 170px; overflow: hidden;
+    }
+    .dropdown-menu.open { display: flex; }
+    .dropdown-item {
+      padding: 12px 16px; font-size: 0.88rem; font-weight: 600; border: none; background: #fff;
+      text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px;
+    }
+    .dropdown-item:hover { background: var(--surface); }
+    .dropdown-item.danger { color: var(--red); }
+
+    @media print {
+      .bottom-nav, .fab, .no-print { display: none !important; }
+      .mobile-shell, .sub-screen { max-width: 100%; box-shadow: none; position: static; height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-shell">
+    <!-- MAIN OVERVIEW header -->
+    <div class="top-bar">
+      <div>
+        <div class="site-selector-label">Current site</div>
+        <select id="siteSelect" class="site-selector" onchange="changeSite(this.value)">
+          <option value="Site 1">Site 1 ⌄</option>
+          <option value="Site 2">Site 2 ⌄</option>
+        </select>
+      </div>
+      <div class="top-actions">
+        <input type="month" id="overviewMonthInput" class="month-chip" onchange="onMonthChange(this.value)" />
+        <button class="icon-btn" title="Share / Install App" onclick="openShareSheet()">📲</button>
+      </div>
+    </div>
+
+    <!-- MAIN TAB VIEWS -->
+    <div id="tab-overview" style="flex:1; display:flex; flex-direction:column;">
+      <!-- Week Strip (Shown when staff > 0) -->
+      <div id="weekStripContainer" class="week-strip" style="display:none;">
+        <button class="icon-btn" onclick="shiftWeek(-7)">‹</button>
+        <div class="week-days" id="weekDaysRow"></div>
+        <button class="icon-btn" onclick="shiftWeek(7)">›</button>
+      </div>
+
+      <!-- Filter Chips (Shown when staff > 0) -->
+      <div id="filterChipsContainer" class="filter-chips" style="display:none;">
+        <button class="chip active-all" id="chipAll" onclick="setOverviewFilter('ALL')">All (0)</button>
+        <button class="chip pending" id="chipPending" onclick="setOverviewFilter('PENDING')">Pending (0)</button>
+        <button class="chip present" id="chipPresent" onclick="setOverviewFilter('P')">P (0)</button>
+        <button class="chip absent" id="chipAbsent" onclick="setOverviewFilter('A')">A (0)</button>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyStateView" class="empty-state">
+        <div class="empty-icon">👥</div>
+        <div class="empty-title">No staff yet</div>
+        <div class="empty-sub">Add staff to see today's attendance overview.</div>
+        <button class="btn-green-pill" onclick="openAddStaffScreen()">Add your first staff</button>
+      </div>
+
+      <!-- Staff Cards List -->
+      <div id="staffListView" class="staff-list" style="display:none;"></div>
+
+      <!-- Floating + Button -->
+      <button id="fabAddStaff" class="fab" style="display:none;" onclick="openAddStaffScreen()">+</button>
+    </div>
+
+    <!-- TAB 2: CASHBOOK -->
+    <div id="tab-cashbook" style="flex:1; display:none; padding:16px 16px 80px;">
+      <h3 style="margin-bottom:12px;">Site Cashbook & Expenses</h3>
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <div style="flex:1; background:var(--green-light); padding:12px; border-radius:12px;">
+          <div style="font-size:0.75rem; color:var(--muted);">Total Cash In</div>
+          <div style="font-size:1.2rem; font-weight:800; color:var(--green-dark);" id="cbTotalIn">₹0</div>
+        </div>
+        <div style="flex:1; background:var(--red-light); padding:12px; border-radius:12px;">
+          <div style="font-size:0.75rem; color:var(--muted);">Total Cash Out</div>
+          <div style="font-size:1.2rem; font-weight:800; color:var(--red);" id="cbTotalOut">₹0</div>
+        </div>
+      </div>
+      <div id="cashbookList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <!-- TAB 3: REPORTS -->
+    <div id="tab-reports" style="flex:1; display:none; padding:16px 16px 80px;">
+      <h3 style="margin-bottom:12px;">All Staff Monthly Summary</h3>
+      <div id="globalReportList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+
+    <!-- TAB 4: SETTINGS & BACKUP -->
+    <div id="tab-settings" style="flex:1; display:none; padding:16px 16px 80px;">
+      <h3 style="margin-bottom:14px;">Settings & Offline Backup</h3>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button class="additional-row" onclick="addNewSitePrompt()">
+          <span>➕ Add New Site</span><span>›</span>
+        </button>
+        <button class="additional-row" onclick="exportBackupJSON()">
+          <span>⬇️ Export LocalStorage Backup (JSON)</span><span>›</span>
+        </button>
+        <label class="additional-row" style="cursor:pointer;">
+          <span>⬆️ Import Backup JSON</span>
+          <input type="file" accept=".json" style="display:none;" onchange="importBackupJSON(event)" />
+          <span>›</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="switchBottomTab('overview', this)">
+        <span class="nav-icon">👥</span>
+        <span>Overview</span>
+      </button>
+      <button class="nav-item" onclick="switchBottomTab('cashbook', this)">
+        <span class="nav-icon">💵</span>
+        <span>Cashbook</span>
+      </button>
+      <button class="nav-item" onclick="switchBottomTab('reports', this)">
+        <span class="nav-icon">📊</span>
+        <span>Reports</span>
+      </button>
+      <button class="nav-item" onclick="switchBottomTab('settings', this)">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings</span>
+      </button>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SUB-SCREEN 1: ADD / EDIT STAFF (Matches 0:03 - 0:27 of video)     -->
+    <!-- ================================================================= -->
+    <div id="screenAddStaff" class="sub-screen">
+      <div class="sub-header">
+        <div class="sub-header-left">
+          <button class="icon-btn" onclick="closeAddStaffScreen()">←</button>
+          <span id="addStaffHeaderTitle">Add Staff</span>
+        </div>
+        <button class="outline-pill-btn" onclick="pickFromContacts()">From Contacts</button>
+      </div>
+
+      <div class="section-label">BASIC INFORMATION</div>
+      <div class="field-box">
+        <label>Staff Name</label>
+        <input type="text" id="inputStaffName" class="grey-input" placeholder="Enter full name" />
+      </div>
+
+      <div class="field-box">
+        <label>Phone Number <span style="opacity:0.7;">(Optional)</span></label>
+        <div class="phone-row">
+          <div class="country-box">🇮🇳 +91 ▾</div>
+          <input type="tel" id="inputStaffPhone" class="grey-input" style="flex:1;" placeholder="Phone number" />
+        </div>
+      </div>
+
+      <div class="additional-row" onclick="openAdditionalSheet()">
+        <div>
+          <div style="font-weight:700; font-size:0.9rem;">Additional details</div>
+          <div id="additionalSummaryText" style="font-size:0.78rem; color:var(--muted); margin-top:2px;">
+            Joining date, designation, shift
+          </div>
+        </div>
+        <span>›</span>
+      </div>
+
+      <div class="section-label">SALARY INFORMATION</div>
+      <div style="margin:0 16px 6px; font-size:0.8rem; color:var(--muted);">Salary Type</div>
+      <div class="seg-group">
+        <button type="button" class="seg-btn active" id="salTypeDaily" onclick="selectSalaryType('Daily')">Daily</button>
+        <button type="button" class="seg-btn" id="salTypeWeekly" onclick="selectSalaryType('Weekly')">Weekly</button>
+        <button type="button" class="seg-btn" id="salTypeMonthly" onclick="selectSalaryType('Monthly')">Monthly</button>
+      </div>
+
+      <div class="field-box">
+        <label>Salary Amount (₹) <span style="opacity:0.7;">(Optional)</span></label>
+        <input type="number" id="inputSalaryAmount" class="grey-input" placeholder="e.g. 500" />
+      </div>
+
+      <div class="security-banner">✅ Your data is safe & secure in LocalStorage</div>
+
+      <div class="bottom-cta-bar">
+        <button class="full-green-btn" onclick="saveStaffMember()">+ Add Staff</button>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SUB-SCREEN 2: STAFF MONTHLY ATTENDANCE LEDGER (0:35 - 1:28)       -->
+    <!-- ================================================================= -->
+    <div id="screenStaffDetail" class="sub-screen">
+      <div class="sub-header">
+        <div class="sub-header-left">
+          <button class="icon-btn" onclick="closeStaffDetailScreen()">←</button>
+          <span id="detailStaffName">Staff Name</span>
+        </div>
+        <button class="icon-btn" onclick="toggleStaffMenu()">⋮</button>
+      </div>
+
+      <!-- 3-Dots Dropdown Menu (Matches 1:17 of video) -->
+      <div id="staffDropdownMenu" class="dropdown-menu">
+        <button class="dropdown-item" onclick="editCurrentStaff()">✏️ Edit Staff</button>
+        <button class="dropdown-item" onclick="openUpdateSalarySheet()">💵 Update Salary</button>
+        <button class="dropdown-item" onclick="deactivateCurrentStaff()">⏸️ Deactivate</button>
+        <button class="dropdown-item danger" onclick="deleteCurrentStaff()">🗑️ Delete</button>
+      </div>
+
+      <!-- 5 Metric Summary Strip -->
+      <div class="summary-strip">
+        <div class="sum-box">
+          <div class="val" style="color:var(--green);" id="detSumP">0</div>
+          <div class="lbl">P</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--red);" id="detSumA">0</div>
+          <div class="lbl">A</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--amber);" id="detSumPL">0</div>
+          <div class="lbl">PL</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--green);" id="detSumOT">0h 0m</div>
+          <div class="lbl">OT + H</div>
+        </div>
+        <div class="sum-box">
+          <div class="val" style="color:var(--green-dark);" id="detSumPay">₹0</div>
+          <div class="lbl">Payment</div>
+        </div>
+      </div>
+
+      <div class="carry-row">
+        <span>↺ Carry forward (prior months)</span>
+        <strong style="color:var(--text);">₹0 ›</strong>
+      </div>
+
+      <div class="action-pills">
+        <button class="pill-action primary" onclick="openStaffReportScreen()">📄 View Report</button>
+        <button class="pill-action" onclick="openPaySalarySheet()">💵 Pay salary</button>
+        <button class="pill-action" onclick="openTransactionsScreen()">⇄ Transactions</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border);">
+        <button class="icon-btn" onclick="shiftMonth(-1)">‹</button>
+        <strong id="detMonthTitle" style="font-size:0.92rem;">October 2026</strong>
+        <button class="icon-btn" onclick="shiftMonth(1)">›</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:8px 16px; font-size:0.75rem; font-weight:700; color:var(--muted);">
+        <span>Date</span>
+        <span>Attendance</span>
+        <span>Payment</span>
+      </div>
+
+      <div id="dayLedgerContainer" class="day-ledger-list"></div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SUB-SCREEN 3: STAFF REPORT & PDF / CSV (Matches 1:29 - 1:33)      -->
+    <!-- ================================================================= -->
+    <div id="screenStaffReport" class="sub-screen">
+      <div class="sub-header no-print">
+        <div class="sub-header-left">
+          <button class="icon-btn" onclick="closeStaffReportScreen()">←</button>
+          <span id="repHeaderTitle">Staff - Report</span>
+        </div>
+        <button class="icon-btn" onclick="window.print()">📤</button>
+      </div>
+
+      <div style="padding:16px 16px 90px;">
+        <div style="background:var(--surface); padding:16px; border-radius:14px; margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:0.75rem; font-weight:700; color:var(--green-dark);">STAFF REPORT</span>
+            <span style="font-size:0.8rem; font-weight:700; color:var(--green-dark);" id="repMonthBadge">October 2026</span>
+          </div>
+          <div style="font-size:0.9rem; line-height:1.7;" id="repStaffInfoBlock"></div>
+        </div>
+
+        <h4 style="margin-bottom:10px;">Attendance summary</h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+          <div style="background:var(--green-light); padding:14px; border-radius:12px;">
+            <span style="font-size:1.25rem; font-weight:800; color:var(--green-dark);" id="repBoxPresent">0</span>
+            <span style="font-size:0.82rem; color:var(--green-dark); margin-left:6px;">Present</span>
+          </div>
+          <div style="background:var(--red-light); padding:14px; border-radius:12px;">
+            <span style="font-size:1.25rem; font-weight:800; color:var(--red);" id="repBoxAbsent">0</span>
+            <span style="font-size:0.82rem; color:var(--red); margin-left:6px;">Absent</span>
+          </div>
+          <div style="background:var(--amber-light); padding:14px; border-radius:12px;">
+            <div style="font-size:1.05rem; font-weight:800; color:#92400e;" id="repBoxHours">0h 0m</div>
+            <div style="font-size:0.74rem; color:#92400e;">Worked hours (OT + H)</div>
+          </div>
+          <div style="background:var(--surface); padding:14px; border-radius:12px;">
+            <span style="font-size:1.25rem; font-weight:800; color:var(--muted);" id="repBoxPL">0</span>
+            <span style="font-size:0.82rem; color:var(--muted); margin-left:6px;">Paid leave</span>
+          </div>
+        </div>
+
+        <h4 style="margin-bottom:10px;">Payment summary</h4>
+        <div style="background:var(--surface); padding:14px; border-radius:14px; margin-bottom:20px; font-size:0.88rem; line-height:2;">
+          <div style="display:flex; justify-content:space-between;"><span>Carry forward (prior months)</span><strong>₹0</strong></div>
+          <div style="display:flex; justify-content:space-between;"><span>Basic earnings</span><strong id="repBasicEarn">₹0</strong></div>
+          <div style="display:flex; justify-content:space-between;"><span>Overtime earnings</span><strong id="repOTEarn">₹0</strong></div>
+          <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:6px;">
+            <strong>Total earnings</strong><strong id="repTotalEarn">₹0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; color:var(--red);">
+            <span>Payments / Advances</span><strong id="repPaymentsDed">-₹0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:6px; font-size:1rem;">
+            <strong>Final balance</strong><strong style="color:var(--green-dark);" id="repFinalBal">₹0</strong>
+          </div>
+        </div>
+
+        <h4 style="margin-bottom:10px;">Attendance details</h4>
+        <div id="repDailyList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
+      <div class="bottom-cta-bar no-print" style="display:flex; gap:10px; position:fixed; bottom:0; width:100%; max-width:440px;">
+        <button class="full-green-btn" style="flex:1;" onclick="window.print()">📄 PDF</button>
+        <button class="outline-pill-btn" style="flex:1; font-size:0.95rem;" onclick="downloadStaffCSV()">📊 CSV</button>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SUB-SCREEN 4: TRANSACTIONS (Matches 1:11 - 1:12 of video)         -->
+    <!-- ================================================================= -->
+    <div id="screenTransactions" class="sub-screen">
+      <div class="sub-header">
+        <div class="sub-header-left">
+          <button class="icon-btn" onclick="closeTransactionsScreen()">←</button>
+          <span>Transactions</span>
+        </div>
+      </div>
+      <div id="transactionsListContainer" style="flex:1; padding:16px;"></div>
+      <div class="bottom-cta-bar" style="display:flex; gap:10px;">
+        <button class="full-green-btn" style="flex:1; background:var(--green);" onclick="openQuickPaymentSheet('RECEIVED')">↓ Received</button>
+        <button class="full-green-btn" style="flex:1; background:var(--red);" onclick="openQuickPaymentSheet('GIVEN')">↑ Given</button>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- BOTTOM SHEET 1: ADDITIONAL DETAILS (Joining Date, Role, Shift)    -->
+    <!-- ================================================================= -->
+    <div id="sheetAdditional" class="sheet-backdrop" onclick="if(event.target===this) closeAdditionalSheet()">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Additional details</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">Joining date, designation, shift</div>
+
+        <div style="display:flex; gap:10px; margin-bottom:14px;">
+          <div style="flex:1;">
+            <label style="font-size:0.78rem; color:var(--muted);">Joining date</label>
+            <input type="date" id="inputJoiningDate" class="grey-input" style="margin-top:4px;" />
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:0.78rem; color:var(--muted);">Designation</label>
+            <input type="text" id="inputDesignation" class="grey-input" style="margin-top:4px;" placeholder="e.g. Site Manager" />
+          </div>
+        </div>
+
+        <div style="font-size:0.78rem; color:var(--muted); margin-bottom:6px;">Shift</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px;">
+          <button type="button" class="seg-btn active" id="shiftMorning" onclick="selectShift('Morning')">Morning</button>
+          <button type="button" class="seg-btn" id="shiftAfternoon" onclick="selectShift('Afternoon')">Afternoon</button>
+          <button type="button" class="seg-btn" id="shiftEvening" onclick="selectShift('Evening')">Evening</button>
+          <button type="button" class="seg-btn" id="shiftNight" onclick="selectShift('Night')">Night</button>
+        </div>
+
+        <button class="full-green-btn" onclick="closeAdditionalSheet()">Done</button>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- BOTTOM SHEET 2: MARK PRESENT / ATTENDANCE TYPE (0:42 - 0:56)      -->
+    <!-- ================================================================= -->
+    <div id="sheetMarkAttendance" class="sheet-backdrop" onclick="if(event.target===this) closeMarkSheet()">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title-row">
+          <span class="sheet-title">Mark Present</span>
+          <span style="font-size:0.82rem; color:var(--muted);" id="markSheetDateLabel">28 Oct 2026</span>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:14px;">
+          <div style="flex:1;">
+            <label style="font-size:0.75rem; color:var(--muted);">In</label>
+            <input type="time" id="markInTime" class="grey-input" style="margin-top:4px;" />
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:0.75rem; color:var(--muted);">Out</label>
+            <input type="time" id="markOutTime" class="grey-input" style="margin-top:4px;" />
+          </div>
+        </div>
+
+        <div style="font-size:0.78rem; color:var(--muted);">Attendance Type ⓘ</div>
+        <div class="type-grid" id="attendanceTypeGrid">
+          <button class="type-chip" onclick="selectAttType('1/2')">1/2</button>
+          <button class="type-chip active" onclick="selectAttType('P')">P</button>
+          <button class="type-chip" onclick="selectAttType('P+1/2')">P+1/2</button>
+          <button class="type-chip" onclick="selectAttType('P+P')">P+P</button>
+          <button class="type-chip" onclick="selectAttType('2P+1/2')">2P+1/2</button>
+          <button class="type-chip" onclick="selectAttType('3P')">3P</button>
+          <button class="type-chip absent-chip" onclick="selectAttType('A')">A</button>
+          <button class="type-chip" onclick="selectAttType('OFF')">OFF</button>
+          <button class="type-chip" onclick="selectAttType('PL')">PL</button>
+          <button class="type-chip" onclick="selectAttType('OT')">OT</button>
+          <button class="type-chip" onclick="selectAttType('Hrs')">Hrs</button>
+        </div>
+
+        <div id="extraHoursBox" style="display:none; margin-bottom:12px;">
+          <label style="font-size:0.78rem; color:var(--muted);">Overtime / Worked Hours</label>
+          <input type="number" id="markOTHours" class="grey-input" style="margin-top:4px;" placeholder="e.g. 2" />
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="font-size:0.78rem; color:var(--muted);">Notes</label>
+          <input type="text" id="markNotes" class="grey-input" style="margin-top:4px;" placeholder="Enter notes (optional)" />
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button class="outline-pill-btn" style="color:var(--red); border-color:var(--border); padding:14px 20px;" onclick="removeAttendanceMark()">Remove</button>
+          <button class="full-green-btn" style="flex:1;" onclick="confirmAttendanceMark()">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- BOTTOM SHEET 3: DAILY PAYMENT / PAY SALARY (1:01 & 1:23)          -->
+    <!-- ================================================================= -->
+    <div id="sheetPayment" class="sheet-backdrop" onclick="if(event.target===this) closePaymentSheet()">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title-row">
+          <span class="sheet-title" id="paySheetTitle">Payment amount</span>
+          <span style="font-size:0.82rem; color:var(--muted);" id="paySheetDate">28 Oct 2026</span>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface); padding:12px 14px; border-radius:12px; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:6px; font-size:1.4rem; font-weight:800;">
+            <span>₹</span>
+            <input type="number" id="payAmountInput" style="border:none; background:transparent; font-size:1.4rem; font-weight:800; width:140px; outline:none;" placeholder="0" />
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="seg-btn" id="payModeOnline" style="padding:6px 12px;" onclick="setPayMode('Online')">Online</button>
+            <button type="button" class="seg-btn active" id="payModeCash" style="padding:6px 12px;" onclick="setPayMode('Cash')">Cash</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="font-size:0.78rem; color:var(--muted);">Notes</label>
+          <input type="text" id="payNotesInput" class="grey-input" style="margin-top:4px;" placeholder="Eg. (Food, petrol, rent, settlement)" />
+        </div>
+
+        <button class="full-green-btn" onclick="savePaymentEntry()">OK</button>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- BOTTOM SHEET 4: UPDATE SALARY + OVERTIME / HOURLY RATE (1:20)     -->
+    <!-- ================================================================= -->
+    <div id="sheetUpdateSalary" class="sheet-backdrop" onclick="if(event.target===this) closeUpdateSalarySheet()">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" style="margin-bottom:12px;">Add salary</div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:0.78rem; color:var(--muted);">Salary Amount (₹)</label>
+          <input type="number" id="updSalAmount" class="grey-input" style="margin-top:4px;" />
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:0.78rem; color:var(--muted);">Overtime rate (₹ / hour)</label>
+          <input type="number" id="updOtRate" class="grey-input" style="margin-top:4px;" placeholder="0.00" />
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:0.78rem; color:var(--muted);">Hourly rate (₹ / hour)</label>
+          <input type="number" id="updHourlyRate" class="grey-input" style="margin-top:4px;" placeholder="0.00" />
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="outline-pill-btn" style="flex:1; padding:14px;" onclick="closeUpdateSalarySheet()">Cancel</button>
+          <button class="full-green-btn" style="flex:1;" onclick="saveUpdatedSalary()">Save salary</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- BOTTOM SHEET 5: SHARE & INSTALL ANDROID APP                       -->
+    <!-- ================================================================= -->
+    <div id="sheetShare" class="sheet-backdrop" onclick="if(event.target===this) closeShareSheet()">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" style="margin-bottom:8px;">Install & Share Mobile App</div>
+        <p style="font-size:0.84rem; color:var(--muted); margin-bottom:14px;">
+          All data is stored 100% offline in your phone's LocalStorage.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="full-green-btn" onclick="triggerPWAInstall()">📲 Install App on Phone</button>
+          <button class="outline-pill-btn" style="padding:12px;" onclick="shareAppWhatsApp()">💬 Share App Link on WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'hajri_mobile_exact_v4';
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const defaultMonth = todayISO.slice(0, 7);
+
+    // Multipliers for exact Hajri Register attendance types
+    const TYPE_MULTIPLIERS = {
+      '1/2': 0.5,
+      'P': 1.0,
+      'P+1/2': 1.5,
+      'P+P': 2.0,
+      '2P+1/2': 2.5,
+      '3P': 3.0,
+      'A': 0,
+      'OFF': 0,
+      'PL': 1.0,
+      'OT': 1.0,
+      'Hrs': 0
+    };
+
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      sites: ['Site 1', 'Site 2'],
+      currentSite: 'Site 1',
+      selectedDate: todayISO,
+      selectedMonth: defaultMonth,
+      staff: [],
+      attendance: {}, // { 'YYYY-MM-DD': { [staffId]: { type: 'P+1/2', inTime:'01:01', outTime:'', otHours:0, notes:'' } } }
+      payments: []    // [{ id, staffId, site, date, amount, mode:'Cash', kind:'GIVEN', notes:'' }]
+    };
+
+    let overviewFilter = 'ALL';
+    let editingStaffId = null;
+    let activeDetailStaffId = null;
+    let tempStaffForm = {
+      joiningDate: todayISO,
+      designation: 'Site Manager',
+      shift: 'Morning',
+      salaryType: 'Daily'
+    };
+    let activeMarkContext = { staffId: null, date: todayISO, selectedType: 'P' };
+    let activePaymentContext = { staffId: null, date: todayISO, mode: 'Cash', kind: 'GIVEN' };
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderOverview();
+    }
+
+    // Init
+    document.getElementById('overviewMonthInput').value = state.selectedMonth;
+    document.getElementById('inputJoiningDate').value = todayISO;
+
+    function populateSites() {
+      const sel = document.getElementById('siteSelect');
+      sel.innerHTML = state.sites.map(s => `<option value="${s}" ${s === state.currentSite ? 'selected' : ''}>${s} ⌄</option>`).join('');
+    }
+
+    function changeSite(val) {
+      state.currentSite = val;
+      saveState();
+    }
+
+    function addNewSitePrompt() {
+      const name = prompt('Enter new Site Name (e.g. Site 3 - Kanke):');
+      if (name && name.trim()) {
+        state.sites.push(name.trim());
+        state.currentSite = name.trim();
+        populateSites();
+        saveState();
+      }
+    }
+
+    function onMonthChange(ym) {
+      if (!ym) return;
+      state.selectedMonth = ym;
+      state.selectedDate = ym + '-01';
+      saveState();
+    }
+
+    function shiftWeek(deltaDays) {
+      const d = new Date(state.selectedDate);
+      d.setDate(d.getDate() + deltaDays);
+      state.selectedDate = d.toISOString().slice(0, 10);
+      state.selectedMonth = state.selectedDate.slice(0, 7);
+      document.getElementById('overviewMonthInput').value = state.selectedMonth;
+      saveState();
+    }
+
+    function renderWeekStrip() {
+      const row = document.getElementById('weekDaysRow');
+      const cur = new Date(state.selectedDate);
+      const dayOfWeek = cur.getDay(); // 0 Sun .. 6 Sat
+      const start = new Date(cur);
+      start.setDate(cur.getDate() - dayOfWeek);
+
+      const dowLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+      let html = '';
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const iso = d.toISOString().slice(0, 10);
+        const isSel = iso === state.selectedDate;
+        html += `
+          <div class="day-item ${isSel ? 'active' : ''}" onclick="selectDate('${iso}')">
+            <span class="dow">${dowLetters[i]}</span>
+            <span class="dom">${d.getDate()}</span>
+          </div>
+        `;
+      }
+      row.innerHTML = html;
+    }
+
+    function selectDate(iso) {
+      state.selectedDate = iso;
+      state.selectedMonth = iso.slice(0, 7);
+      document.getElementById('overviewMonthInput').value = state.selectedMonth;
+      saveState();
+    }
+
+    function setOverviewFilter(f) {
+      overviewFilter = f;
+      renderOverview();
+    }
+
+    function renderOverview() {
+      populateSites();
+      const siteStaff = state.staff.filter(s => s.site === state.currentSite && s.active !== false);
+      const emptyEl = document.getElementById('emptyStateView');
+      const listEl = document.getElementById('staffListView');
+      const weekEl = document.getElementById('weekStripContainer');
+      const chipsEl = document.getElementById('filterChipsContainer');
+      const fabEl = document.getElementById('fabAddStaff');
+
+      if (siteStaff.length === 0) {
+        emptyEl.style.display = 'flex';
+        listEl.style.display = 'none';
+        weekEl.style.display = 'none';
+        chipsEl.style.display = 'none';
+        fabEl.style.display = 'none';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      listEl.style.display = 'flex';
+      weekEl.style.display = 'flex';
+      chipsEl.style.display = 'flex';
+      fabEl.style.display = 'flex';
+
+      renderWeekStrip();
+
+      const dayMap = state.attendance[state.selectedDate] || {};
+      let countPending = 0, countP = 0, countA = 0;
+
+      siteStaff.forEach(s => {
+        const rec = dayMap[s.id];
+        if (!rec || !rec.type) countPending++;
+        else if (rec.type === 'A') countA++;
+        else countP++;
+      });
+
+      document.getElementById('chipAll').textContent = `All (${siteStaff.length})`;
+      document.getElementById('chipPending').textContent = `Pending (${countPending})`;
+      document.getElementById('chipPresent').textContent = `P (${countP})`;
+      document.getElementById('chipAbsent').textContent = `A (${countA})`;
+
+      const filtered = siteStaff.filter(s => {
+        const rec = dayMap[s.id];
+        if (overviewFilter === 'PENDING') return !rec || !rec.type;
+        if (overviewFilter === 'P') return rec && rec.type && rec.type !== 'A';
+        if (overviewFilter === 'A') return rec && rec.type === 'A';
+        return true;
+      });
+
+      listEl.innerHTML = filtered.map((s, idx) => {
+        const rec = dayMap[s.id] || {};
+        const t = rec.type || '';
+        const isPresentType = t && t !== 'A';
+        const pLabel = isPresentType ? t : 'P';
+
+        return `
+          <div class="staff-card" onclick="openStaffDetailScreen('${s.id}')">
+            <div class="staff-card-left">
+              <div class="serial-badge">${idx + 1}</div>
+              <div>
+                <div class="staff-name">${s.name}</div>
+                <div class="staff-role">${s.designation || 'Staff'}</div>
+              </div>
+            </div>
+            <div class="staff-card-right" onclick="event.stopPropagation()">
+              <button class="circle-btn ${isPresentType ? 'active-P' : ''}" onclick="quickMarkOverview('${s.id}', 'P')">${pLabel}</button>
+              <button class="circle-btn ${t === 'A' ? 'active-A' : ''}" onclick="quickMarkOverview('${s.id}', 'A')">A</button>
+            </div>
+          </div>
+        `;
+      }).join('') + `<div class="security-banner">🛡️ Your staff data is secure</div>`;
+    }
+
+    function quickMarkOverview(staffId, defaultType) {
+      openMarkSheet(staffId, state.selectedDate, defaultType);
+    }
+
+    // =================================================================
+    // ADD / EDIT STAFF FLOW
+    // =================================================================
+    function openAddStaffScreen(editId = null) {
+      editingStaffId = editId;
+      if (editId) {
+        const s = state.staff.find(x => x.id === editId);
+        document.getElementById('addStaffHeaderTitle').textContent = 'Edit Staff';
+        document.getElementById('inputStaffName').value = s.name;
+        document.getElementById('inputStaffPhone').value = s.phone || '';
+        document.getElementById('inputSalaryAmount').value = s.salaryAmount || '';
+        tempStaffForm = {
+          joiningDate: s.joiningDate || todayISO,
+          designation: s.designation || 'Site Manager',
+          shift: s.shift || 'Morning',
+          salaryType: s.salaryType || 'Daily'
+        };
+      } else {
+        document.getElementById('addStaffHeaderTitle').textContent = 'Add Staff';
+        document.getElementById('inputStaffName').value = '';
+        document.getElementById('inputStaffPhone').value = '';
+        document.getElementById('inputSalaryAmount').value = '';
+        tempStaffForm = {
+          joiningDate: todayISO,
+          designation: 'Site Manager',
+          shift: 'Morning',
+          salaryType: 'Daily'
+        };
+      }
+      updateAdditionalSummaryText();
+      selectSalaryType(tempStaffForm.salaryType);
+      document.getElementById('screenAddStaff').classList.add('open');
+    }
+
+    function closeAddStaffScreen() {
+      document.getElementById('screenAddStaff').classList.remove('open');
+    }
+
+    function openAdditionalSheet() {
+      document.getElementById('inputJoiningDate').value = tempStaffForm.joiningDate;
+      document.getElementById('inputDesignation').value = tempStaffForm.designation;
+      selectShift(tempStaffForm.shift);
+      document.getElementById('sheetAdditional').classList.add('open');
+    }
+
+    function closeAdditionalSheet() {
+      tempStaffForm.joiningDate = document.getElementById('inputJoiningDate').value || todayISO;
+      tempStaffForm.designation = document.getElementById('inputDesignation').value.trim() || 'Site Manager';
+      updateAdditionalSummaryText();
+      document.getElementById('sheetAdditional').classList.remove('open');
+    }
+
+    function selectShift(sh) {
+      tempStaffForm.shift = sh;
+      ['Morning', 'Afternoon', 'Evening', 'Night'].forEach(k => {
+        document.getElementById('shift' + k).classList.toggle('active', k === sh);
+      });
+    }
+
+    function selectSalaryType(st) {
+      tempStaffForm.salaryType = st;
+      ['Daily', 'Weekly', 'Monthly'].forEach(k => {
+        document.getElementById('salType' + k).classList.toggle('active', k === st);
+      });
+    }
+
+    function updateAdditionalSummaryText() {
+      const d = new Date(tempStaffForm.joiningDate);
+      const formatted = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+      document.getElementById('additionalSummaryText').textContent =
+        `${tempStaffForm.designation} · ${tempStaffForm.shift} · ${formatted}`;
+    }
+
+    async function pickFromContacts() {
+      if ('contacts' in navigator && 'ContactsManager' in window) {
+        try {
+          const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+          if (contacts.length > 0) {
+            document.getElementById('inputStaffName').value = contacts[0].name?.[0] || '';
+            document.getElementById('inputStaffPhone').value = (contacts[0].tel?.[0] || '').replace(/\D/g, '').slice(-10);
+          }
+        } catch (err) {}
+      } else {
+        alert('Contact Picker API works on Android Chrome HTTPS. Please type the name & number directly.');
+      }
+    }
+
+    function saveStaffMember() {
+      const name = document.getElementById('inputStaffName').value.trim();
+      if (!name) return alert('Please enter Staff Name');
+      const phone = document.getElementById('inputStaffPhone').value.trim();
+      const salaryAmount = parseFloat(document.getElementById('inputSalaryAmount').value) || 500;
+
+      if (editingStaffId) {
+        const s = state.staff.find(x => x.id === editingStaffId);
+        if (s) {
+          s.name = name;
+          s.phone = phone;
+          s.salaryAmount = salaryAmount;
+          s.joiningDate = tempStaffForm.joiningDate;
+          s.designation = tempStaffForm.designation;
+          s.shift = tempStaffForm.shift;
+          s.salaryType = tempStaffForm.salaryType;
+        }
+      } else {
+        state.staff.push({
+          id: 'st_' + Date.now(),
+          site: state.currentSite,
+          name,
+          phone,
+          joiningDate: tempStaffForm.joiningDate,
+          designation: tempStaffForm.designation,
+          shift: tempStaffForm.shift,
+          salaryType: tempStaffForm.salaryType,
+          salaryAmount,
+          otRate: 0,
+          hourlyRate: 0,
+          active: true
+        });
+      }
+
+      closeAddStaffScreen();
+      saveState();
+      if (activeDetailStaffId) renderStaffDetailScreen();
+    }
+
+    // =================================================================
+    // STAFF DETAIL LEDGER SCREEN (Matches 0:35 - 1:28)
+    // =================================================================
+    function openStaffDetailScreen(staffId) {
+      activeDetailStaffId = staffId;
+      document.getElementById('staffDropdownMenu').classList.remove('open');
+      renderStaffDetailScreen();
+      document.getElementById('screenStaffDetail').classList.add('open');
+    }
+
+    function closeStaffDetailScreen() {
+      document.getElementById('screenStaffDetail').classList.remove('open');
+      activeDetailStaffId = null;
+      renderOverview();
+    }
+
+    function toggleStaffMenu() {
+      document.getElementById('staffDropdownMenu').classList.toggle('open');
+    }
+
+    function editCurrentStaff() {
+      document.getElementById('staffDropdownMenu').classList.remove('open');
+      openAddStaffScreen(activeDetailStaffId);
+    }
+
+    function deactivateCurrentStaff() {
+      const s = state.staff.find(x => x.id === activeDetailStaffId);
+      if (s) s.active = false;
+      saveState();
+      closeStaffDetailScreen();
+    }
+
+    function deleteCurrentStaff() {
+      if (!confirm('Delete this staff member?')) return;
+      state.staff = state.staff.filter(x => x.id !== activeDetailStaffId);
+      saveState();
+      closeStaffDetailScreen();
+    }
+
+    function shiftMonth(delta) {
+      const [y, m] = state.selectedMonth.split('-').map(Number);
+      const d = new Date(y, m - 1 + delta, 1);
+      state.selectedMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('overviewMonthInput').value = state.selectedMonth;
+      renderStaffDetailScreen();
+    }
+
+    function computeStaffMonthMetrics(staffId, ym) {
+      const s = state.staff.find(x => x.id === staffId);
+      let pUnits = 0, aCount = 0, plCount = 0, otHours = 0;
+
+      Object.entries(state.attendance).forEach(([dateKey, dayMap]) => {
+        if (dateKey.startsWith(ym) && dayMap[staffId]) {
+          const rec = dayMap[staffId];
+          const t = rec.type;
+          if (t === 'A') aCount++;
+          else if (t === 'PL') plCount++;
+          else if (TYPE_MULTIPLIERS[t] !== undefined) {
+            pUnits += TYPE_MULTIPLIERS[t];
+          }
+          otHours += parseFloat(rec.otHours || 0);
+        }
+      });
+
+      const dailyRate = s ? (s.salaryType === 'Monthly' ? s.salaryAmount / 30 : s.salaryType === 'Weekly' ? s.salaryAmount / 7 : s.salaryAmount) : 500;
+      const basicEarnings = (pUnits + plCount) * dailyRate;
+      const otEarnings = otHours * (s?.otRate || 0);
+      const totalEarned = basicEarnings + otEarnings;
+
+      const monthPayments = state.payments
+        .filter(p => p.staffId === staffId && p.date.startsWith(ym))
+        .reduce((acc, cur) => acc + (cur.kind === 'RECEIVED' ? -cur.amount : cur.amount), 0);
+
+      const finalBalance = totalEarned - monthPayments;
+      return { pUnits, aCount, plCount, otHours, basicEarnings, otEarnings, totalEarned, monthPayments, finalBalance };
+    }
+
+    function renderStaffDetailScreen() {
+      const s = state.staff.find(x => x.id === activeDetailStaffId);
+      if (!s) return;
+      document.getElementById('detailStaffName').textContent = s.name;
+
+      const [year, month] = state.selectedMonth.split('-').map(Number);
+      const monthDate = new Date(year, month - 1, 1);
+      document.getElementById('detMonthTitle').textContent =
+        monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      const metrics = computeStaffMonthMetrics(s.id, state.selectedMonth);
+      document.getElementById('detSumP').textContent = metrics.pUnits;
+      document.getElementById('detSumA').textContent = String(metrics.aCount).padStart(2, '0');
+      document.getElementById('detSumPL').textContent = metrics.plCount;
+      document.getElementById('detSumOT').textContent = `${metrics.otHours}h 0m`;
+      document.getElementById('detSumPay').textContent = `₹${metrics.monthPayments.toFixed(0)}`;
+
+      // Build day rows from end of month (or today) down to joining date / 1st of month
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const maxDay = (state.selectedMonth === todayISO.slice(0, 7))
+        ? Math.min(daysInMonth, new Date().getDate())
+        : daysInMonth;
+
+      const dowNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      let rowsHTML = '';
+      for (let d = maxDay; d >= 1; d--) {
+        const iso = `${state.selectedMonth}-${String(d).padStart(2, '0')}`;
+        const dateObj = new Date(year, month - 1, d);
+        const dow = dowNames[dateObj.getDay()];
+        const rec = (state.attendance[iso] && state.attendance[iso][s.id]) || {};
+        const curType = rec.type || '';
+        const isPresentVariant = curType && curType !== 'A' && curType !== 'PL';
+
+        const dayPaid = state.payments
+          .filter(p => p.staffId === s.id && p.date === iso)
+          .reduce((sum, p) => sum + p.amount, 0);
+
+        rowsHTML += `
+          <div class="day-ledger-row">
+            <div class="day-label ${dow === 'Sun' ? 'sunday' : ''}">
+              <div>${String(d).padStart(2, '0')}</div>
+              <div class="sub">${dow}</div>
+            </div>
+            <div class="day-pills">
+              ${isPresentVariant && curType !== 'P'
+                ? `<button class="mini-circle sel-P" onclick="openMarkSheet('${s.id}','${iso}','${curType}')">${curType}</button>`
+                : ''
+              }
+              <button class="mini-circle ${curType === 'P' ? 'sel-P' : ''}" onclick="openMarkSheet('${s.id}','${iso}','P')">P</button>
+              <button class="mini-circle ${curType === 'A' ? 'sel-A' : ''}" onclick="openMarkSheet('${s.id}','${iso}','A')">A</button>
+              <button class="mini-circle" onclick="openMarkSheet('${s.id}','${iso}','OT')">OT</button>
+              <button class="mini-circle" onclick="openMarkSheet('${s.id}','${iso}','P+1/2')">•••</button>
+            </div>
+            <button class="pay-add-btn" onclick="openDailyPaymentSheet('${s.id}','${iso}')">
+              ₹${dayPaid} ⊕
+            </button>
+          </div>
+        `;
+      }
+      document.getElementById('dayLedgerContainer').innerHTML = rowsHTML;
+    }
+
+    // =================================================================
+    // MARK PRESENT / ATTENDANCE TYPE BOTTOM SHEET (0:42 - 0:56)
+    // =================================================================
+    function openMarkSheet(staffId, dateISO, initialType = 'P') {
+      const existing = (state.attendance[dateISO] && state.attendance[dateISO][staffId]) || {};
+      const chosen = existing.type || initialType;
+      activeMarkContext = { staffId, date: dateISO, selectedType: chosen };
+
+      const dObj = new Date(dateISO);
+      document.getElementById('markSheetDateLabel').textContent =
+        dObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+      const nowTime = new Date().toTimeString().slice(0, 5);
+      document.getElementById('markInTime').value = existing.inTime || nowTime;
+      document.getElementById('markOutTime').value = existing.outTime || '';
+      document.getElementById('markOTHours').value = existing.otHours || '';
+      document.getElementById('markNotes').value = existing.notes || '';
+
+      selectAttType(chosen);
+      document.getElementById('sheetMarkAttendance').classList.add('open');
+    }
+
+    function closeMarkSheet() {
+      document.getElementById('sheetMarkAttendance').classList.remove('open');
+    }
+
+    function selectAttType(typeCode) {
+      activeMarkContext.selectedType = typeCode;
+      document.querySelectorAll('#attendanceTypeGrid .type-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim() === typeCode);
+      });
+      document.getElementById('extraHoursBox').style.display =
+        (typeCode === 'OT' || typeCode === 'Hrs') ? 'block' : 'none';
+    }
+
+    function confirmAttendanceMark() {
+      const { staffId, date, selectedType } = activeMarkContext;
+      if (!state.attendance[date]) state.attendance[date] = {};
+      state.attendance[date][staffId] = {
+        type: selectedType,
+        inTime: document.getElementById('markInTime').value,
+        outTime: document.getElementById('markOutTime').value,
+        otHours: parseFloat(document.getElementById('markOTHours').value) || 0,
+        notes: document.getElementById('markNotes').value.trim()
+      };
+      closeMarkSheet();
+      saveState();
+      if (activeDetailStaffId) renderStaffDetailScreen();
+    }
+
+    function removeAttendanceMark() {
+      const { staffId, date } = activeMarkContext;
+      if (state.attendance[date]) {
+        delete state.attendance[date][staffId];
+      }
+      closeMarkSheet();
+      saveState();
+      if (activeDetailStaffId) renderStaffDetailScreen();
+    }
+
+    // =================================================================
+    // PAYMENTS & SALARY SHEETS (1:01, 1:11, 1:23)
+    // =================================================================
+    function openDailyPaymentSheet(staffId, dateISO) {
+      const s = state.staff.find(x => x.id === staffId);
+      activePaymentContext = { staffId, date: dateISO, mode: 'Cash', kind: 'GIVEN' };
+      document.getElementById('paySheetTitle').textContent = `Payment amount to ${s ? s.name : 'Staff'}`;
+      document.getElementById('paySheetDate').textContent = dateISO;
+      document.getElementById('payAmountInput').value = '';
+      document.getElementById('payNotesInput').value = '';
+      setPayMode('Cash');
+      document.getElementById('sheetPayment').classList.add('open');
+    }
+
+    function openPaySalarySheet() {
+      openDailyPaymentSheet(activeDetailStaffId, todayISO);
+    }
+
+    function openQuickPaymentSheet(kind) {
+      const s = state.staff.find(x => x.id === activeDetailStaffId);
+      activePaymentContext = { staffId: activeDetailStaffId, date: todayISO, mode: 'Cash', kind };
+      document.getElementById('paySheetTitle').textContent = `${kind === 'RECEIVED' ? 'Received from' : 'Given to'} ${s ? s.name : ''}`;
+      document.getElementById('paySheetDate').textContent = todayISO;
+      document.getElementById('payAmountInput').value = '';
+      document.getElementById('payNotesInput').value = '';
+      document.getElementById('sheetPayment').classList.add('open');
+    }
+
+    function closePaymentSheet() {
+      document.getElementById('sheetPayment').classList.remove('open');
+    }
+
+    function setPayMode(m) {
+      activePaymentContext.mode = m;
+      document.getElementById('payModeOnline').classList.toggle('active', m === 'Online');
+      document.getElementById('payModeCash').classList.toggle('active', m === 'Cash');
+    }
+
+    function savePaymentEntry() {
+      const amt = parseFloat(document.getElementById('payAmountInput').value) || 0;
+      if (amt <= 0) return closePaymentSheet();
+      const s = state.staff.find(x => x.id === activePaymentContext.staffId);
+      state.payments.unshift({
+        id: 'pay_' + Date.now(),
+        staffId: activePaymentContext.staffId,
+        staffName: s ? s.name : 'Staff',
+        site: state.currentSite,
+        date: activePaymentContext.date,
+        amount: amt,
+        mode: activePaymentContext.mode,
+        kind: activePaymentContext.kind,
+        notes: document.getElementById('payNotesInput').value.trim()
+      });
+      closePaymentSheet();
+      saveState();
+      if (activeDetailStaffId) renderStaffDetailScreen();
+      renderTransactionsList();
+    }
+
+    // Update Salary Sheet
+    function openUpdateSalarySheet() {
+      document.getElementById('staffDropdownMenu').classList.remove('open');
+      const s = state.staff.find(x => x.id === activeDetailStaffId);
+      if (!s) return;
+      document.getElementById('updSalAmount').value = s.salaryAmount || 500;
+      document.getElementById('updOtRate').value = s.otRate || 0;
+      document.getElementById('updHourlyRate').value = s.hourlyRate || 0;
+      document.getElementById('sheetUpdateSalary').classList.add('open');
+    }
+
+    function closeUpdateSalarySheet() {
+      document.getElementById('sheetUpdateSalary').classList.remove('open');
+    }
+
+    function saveUpdatedSalary() {
+      const s = state.staff.find(x => x.id === activeDetailStaffId);
+      if (s) {
+        s.salaryAmount = parseFloat(document.getElementById('updSalAmount').value) || s.salaryAmount;
+        s.otRate = parseFloat(document.getElementById('updOtRate').value) || 0;
+        s.hourlyRate = parseFloat(document.getElementById('updHourlyRate').value) || 0;
+      }
+      closeUpdateSalarySheet();
+      saveState();
+      renderStaffDetailScreen();
+    }
+
+    // Transactions Screen
+    function openTransactionsScreen() {
+      renderTransactionsList();
+      document.getElementById('screenTransactions').classList.add('open');
+    }
+
+    function closeTransactionsScreen() {
+      document.getElementById('screenTransactions').classList.remove('open');
+    }
+
+    function renderTransactionsList() {
+      const box = document.getElementById('transactionsListContainer');
+      const list = state.payments.filter(p => p.staffId === activeDetailStaffId);
+      if (list.length === 0) {
+        box.innerHTML = `
+          <div class="empty-state" style="height:60vh;">
+            <div class="empty-icon">⇄</div>
+            <div class="empty-title">No transactions yet</div>
+            <div class="empty-sub">Record money given to or received from this staff member.</div>
+          </div>
+        `;
+        return;
+      }
+      box.innerHTML = list.map(p => `
+        <div style="display:flex; justify-content:space-between; padding:12px; background:var(--surface); border-radius:12px; margin-bottom:8px;">
+          <div>
+            <strong>${p.kind === 'RECEIVED' ? '↓ Received' : '↑ Given'} (${p.mode})</strong>
+            <div style="font-size:0.76rem; color:var(--muted);">${p.date} ${p.notes ? '· ' + p.notes : ''}</div>
+          </div>
+          <strong style="color:${p.kind === 'RECEIVED' ? 'var(--green)' : 'var(--red)'};">₹${p.amount}</strong>
+        </div>
+      `).join('');
+    }
+
+    // =================================================================
+    // STAFF REPORT SCREEN (Matches 1:29 - 1:33)
+    // =================================================================
+    function openStaffReportScreen() {
+      const s = state.staff.find(x => x.id === activeDetailStaffId);
+      if (!s) return;
+      const m = computeStaffMonthMetrics(s.id, state.selectedMonth);
+
+      document.getElementById('repHeaderTitle').textContent = `${s.name} - Report`;
+      document.getElementById('repMonthBadge').textContent = document.getElementById('detMonthTitle').textContent;
+      document.getElementById('repStaffInfoBlock').innerHTML = `
+        <div>Name: <strong>${s.name}</strong></div>
+        <div>Designation: <strong>${s.designation || 'Staff'}</strong></div>
+        <div>Salary rate: <strong>₹${s.salaryAmount} per ${s.salaryType === 'Monthly' ? 'month' : s.salaryType === 'Weekly' ? 'week' : 'day'}</strong></div>
+        <div>Overtime rate: <strong>${s.otRate ? '₹' + s.otRate + '/hr' : '—'}</strong></div>
+        <div>Hourly rate: <strong>${s.hourlyRate ? '₹' + s.hourlyRate + '/hr' : '—'}</strong></div>
+      `;
+
+      document.getElementById('repBoxPresent').textContent = m.pUnits;
+      document.getElementById('repBoxAbsent').textContent = m.aCount;
+      document.getElementById('repBoxHours').textContent = `${m.otHours}h 0m`;
+      document.getElementById('repBoxPL').textContent = m.plCount;
+
+      document.getElementById('repBasicEarn').textContent = `₹${m.basicEarnings.toFixed(0)}`;
+      document.getElementById('repOTEarn').textContent = `₹${m.otEarnings.toFixed(0)}`;
+      document.getElementById('repTotalEarn').textContent = `₹${m.totalEarned.toFixed(0)}`;
+      document.getElementById('repPaymentsDed').textContent = `-₹${m.monthPayments.toFixed(0)}`;
+      document.getElementById('repFinalBal').textContent = `₹${m.finalBalance.toFixed(0)}`;
+
+      const [year, month] = state.selectedMonth.split('-').map(Number);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const dowNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      let dailyHTML = '';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso = `${state.selectedMonth}-${String(d).padStart(2, '0')}`;
+        const dow = dowNames[new Date(year, month - 1, d).getDay()];
+        const rec = (state.attendance[iso] && state.attendance[iso][s.id]) || {};
+        let badge = '—';
+        if (rec.type === 'A') badge = `<span style="background:var(--red);color:#fff;padding:3px 10px;border-radius:99px;font-size:0.75rem;font-weight:700;">Absent</span>`;
+        else if (rec.type) badge = `<span style="background:var(--green);color:#fff;padding:3px 10px;border-radius:99px;font-size:0.75rem;font-weight:700;">${rec.type}</span>`;
+
+        dailyHTML += `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--surface); border-radius:10px;">
+            <div><strong>${String(d).padStart(2, '0')}</strong> <span style="font-size:0.72rem;color:var(--muted);margin-left:6px;">${dow}</span></div>
+            <div>${badge}</div>
+          </div>
+        `;
+      }
+      document.getElementById('repDailyList').innerHTML = dailyHTML;
+      document.getElementById('screenStaffReport').classList.add('open');
+    }
+
+    function closeStaffReportScreen() {
+      document.getElementById('screenStaffReport').classList.remove('open');
+    }
+
+    function downloadStaffCSV() {
+      const s = state.staff.find(x => x.id === activeDetailStaffId);
+      if (!s) return;
+      let csv = 'Date,Staff Name,Designation,Attendance Status,In Time,Out Time,OT Hours,Notes\n';
+      Object.keys(state.attendance).sort().forEach(dateKey => {
+        if (dateKey.startsWith(state.selectedMonth)) {
+          const rec = state.attendance[dateKey][s.id];
+          if (rec) {
+            csv += `${dateKey},"${s.name}","${s.designation}",${rec.type},${rec.inTime || ''},${rec.outTime || ''},${rec.otHours || 0},"${rec.notes || ''}"\n`;
+          }
+        }
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${s.name}_${state.selectedMonth}_report.csv`;
+      a.click();
+    }
+
+    // =================================================================
+    // BOTTOM TABS (Overview, Cashbook, Reports, Settings)
+    // =================================================================
+    function switchBottomTab(tabName, btn) {
+      ['overview', 'cashbook', 'reports', 'settings'].forEach(t => {
+        document.getElementById('tab-' + t).style.display = (t === tabName) ? (t === 'overview' ? 'flex' : 'block') : 'none';
+      });
+      document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (tabName === 'cashbook') renderCashbookTab();
+      if (tabName === 'reports') renderGlobalReportsTab();
+    }
+
+    function renderCashbookTab() {
+      let totalIn = 0, totalOut = 0;
+      const listEl = document.getElementById('cashbookList');
+      listEl.innerHTML = state.payments.map(p => {
+        if (p.kind === 'RECEIVED') totalIn += p.amount;
+        else totalOut += p.amount;
+        return `
+          <div style="display:flex; justify-content:space-between; padding:12px; background:var(--surface); border-radius:12px;">
+            <div>
+              <strong>${p.staffName || 'Staff'} (${p.mode})</strong>
+              <div style="font-size:0.75rem; color:var(--muted);">${p.date} · ${p.notes || p.kind}</div>
+            </div>
+            <strong style="color:${p.kind === 'RECEIVED' ? 'var(--green)' : 'var(--red)'};">
+              ${p.kind === 'RECEIVED' ? '+' : '-'}₹${p.amount}
+            </strong>
+          </div>
+        `;
+      }).join('') || `<div style="color:var(--muted); text-align:center; padding:30px;">No cashbook entries yet.</div>`;
+
+      document.getElementById('cbTotalIn').textContent = `₹${totalIn}`;
+      document.getElementById('cbTotalOut').textContent = `₹${totalOut}`;
+    }
+
+    function renderGlobalReportsTab() {
+      const box = document.getElementById('globalReportList');
+      const siteStaff = state.staff.filter(s => s.site === state.currentSite);
+      box.innerHTML = siteStaff.map(s => {
+        const m = computeStaffMonthMetrics(s.id, state.selectedMonth);
+        return `
+          <div class="staff-card" onclick="openStaffDetailScreen('${s.id}'); openStaffReportScreen();">
+            <div>
+              <div class="staff-name">${s.name}</div>
+              <div class="staff-role">Present: ${m.pUnits} | Absent: ${m.aCount}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:800; color:var(--green-dark);">₹${m.finalBalance.toFixed(0)}</div>
+              <div style="font-size:0.72rem; color:var(--muted);">Tap for PDF/CSV ›</div>
+            </div>
+          </div>
+        `;
+      }).join('') || `<div style="color:var(--muted); text-align:center; padding:30px;">Add staff to view monthly reports.</div>`;
+    }
+
+    // Backup & Share
+    function exportBackupJSON() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `hajri_mobile_backup_${todayISO}.json`;
+      a.click();
+    }
+
+    function importBackupJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          state = JSON.parse(ev.target.result);
+          saveState();
+          alert('Backup restored successfully!');
+        } catch (err) {
+          alert('Invalid backup file');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    function openShareSheet() {
+      document.getElementById('sheetShare').classList.add('open');
+    }
+    function closeShareSheet() {
+      document.getElementById('sheetShare').classList.remove('open');
+    }
+    async function triggerPWAInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      } else {
+        alert('In Android Chrome: Tap the top-right menu (⋮) and select "Add to Home screen" or "Install app".');
+      }
+    }
+    function shareAppWhatsApp() {
+      const text = encodeURIComponent('Open & Install Hajri Register Mobile App (100% Offline LocalStorage): ' + window.location.href);
+      window.open('https://wa.me/?text=' + text, '_blank');
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+
+    renderOverview();
+  </script>
+</body>
+</html>

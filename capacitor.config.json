@@ -1,0 +1,6 @@
+{
+  "appId": "com.hajriregister.mobile",
+  "appName": "Hajri Register",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
